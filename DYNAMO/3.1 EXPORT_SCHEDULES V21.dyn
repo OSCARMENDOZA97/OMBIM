@@ -1,8 +1,8 @@
 {
-  "Uuid": "bd7c7826-0a54-4c34-926a-26fcec35a592",
+  "Uuid": "7e0e7bdc-be4f-4394-938a-f23ef01108d5",
   "IsCustomNode": false,
-  "Description": "",
-  "Name": "3.1 EXPORT_SCHEDULES V21",
+  "Description": null,
+  "Name": "3.1 EXPORT_SCHEDULES V21_1",
   "ElementResolver": {
     "ResolutionMap": {}
   },
@@ -10,16 +10,34 @@
   "Outputs": [],
   "Nodes": [
     {
+      "ConcreteType": "CoreNodeModels.Input.BoolSelector, CoreNodeModels",
+      "NodeType": "BooleanInputNode",
+      "InputValue": true,
+      "Id": "5dafa42a06f5481db4736e5cdde75b56",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "8cb6191e643042aeb55f7f564aab61d4",
+          "Name": "",
+          "Description": "Boolean",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Selección entre True y False"
+    },
+    {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
       "Code": "import clr\r\nimport sys\r\nimport System\r\nfrom System import Array\r\nfrom System.Collections.Generic import *\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\nclr.AddReference('RevitAPI')\r\nclr.AddReference('RevitAPIUI')\r\nimport Autodesk\r\nfrom Autodesk.Revit.DB import *\r\nfrom Autodesk.Revit.UI import *\r\nfrom Autodesk.Revit.UI.Selection import *\r\nclr.AddReference('System')\r\nclr.AddReference(\"System.Windows.Forms\")\r\nclr.AddReference(\"System.Drawing\")\r\n\r\n#Import system\r\nimport System\r\nfrom System.Windows.Forms import *\r\nfrom System.Drawing import  Point, Size, Font, FontStyle, Drawing2D\r\n\r\nclass OM_Form(Form):                  # Heredas todo de la clase forms \r\n    def __init__(self):\r\n        self.Text = 'OMBIM WinForm'\r\n        self.Size = Size(500,800)\r\n        self.StartPosition = FormStartPosition.CenterScreen\r\n        self.FormBorderStyle = FormBorderStyle.FixedDialog\r\n        self.TopMost = True  # Tu ventana antes de las demás\r\n        self.ShowIcon = False  # Quita el icono de la barra de título\r\n        self.MaximizeBox = False  # Quita el botón de maximizar\r\n        self.MinimizeBox = False  # Quita el botón de minimizar\r\n        self.submitted = False  \r\n       # Label for Textbox \r\n        self.label_textbox = Label()\r\n        self.label_textbox.Text = \"Export Schedules\"\r\n        self.label_textbox.Location = Point(20, 20)\r\n        self.label_textbox.Size = Size(180, 80)\r\n        self.Controls.Add(self.label_textbox)\r\n        self.label_textbox.Font = Font(\"Arial\", 20, FontStyle.Bold)\r\n        self.label_textbox.ForeColor = System.Drawing.Color.Blue\r\n\r\n        # Label for ListBox\r\n        self.labelListBox = Label()\r\n        self.labelListBox.Text = \"1. Schedule List\"\r\n        self.labelListBox.Location = Point(20,110)\r\n        self.labelListBox.Size = Size(200,40)\r\n        self.labelListBox.Font = Font(\"Arial\", 12, FontStyle.Bold)\r\n        self.Controls.Add(self.labelListBox)\r\n        \r\n        # Evento para capturar cierre por \"X\"\r\n        self.FormClosing += self.on_form_closing\r\n\r\n        # Label for list box Filter\r\n        self.labelFilter = Label()\r\n        self.labelFilter.Text = \"Filter\"\r\n        self.labelFilter.Location = Point(20,150)\r\n        self.labelFilter.Size = Size(80,20)\r\n        self.Controls.Add(self.labelFilter)\r\n\r\n        # TextBox for ListBOx Filter\r\n        self.textBoxFilter = TextBox()\r\n        self.textBoxFilter.Location = Point(100, 150)\r\n        self.textBoxFilter.Size  = Size(350,20)\r\n        self.Controls.Add(self.textBoxFilter)\r\n        self.textBoxFilter.TextChanged += self.filter_updated\r\n\r\n        # CheckedListBox\r\n        self.checkedListBox = CheckedListBox()\r\n        self.checkedListBox.Location = Point(20, 180)  # Se desplaza un poco hacia abajo\r\n        self.checkedListBox.Size = Size(430, 300)\r\n        self.Controls.Add(self.checkedListBox)\r\n        self.update_listBox()\r\n\r\n        # Button to select all filtered items\r\n        self.buttonSelectAll = Button()\r\n        self.buttonSelectAll.Text = \"Select All\"\r\n        self.buttonSelectAll.Location = Point(20,490)  # Ajusta la posición según tu diseño\r\n        self.buttonSelectAll.Size = Size(100, 30)\r\n        self.buttonSelectAll.Click += self.select_all_items\r\n        self.Controls.Add(self.buttonSelectAll)\r\n\r\n        # Button to deselect all filtered items\r\n        self.buttonDeselectAll = Button()\r\n        self.buttonDeselectAll.Text = \"Deselect All\"\r\n        self.buttonDeselectAll.Location = Point(130, 490)  # Ajusta la posición según tu diseño\r\n        self.buttonDeselectAll.Size = Size(100, 30)\r\n        self.buttonDeselectAll.Click += self.deselect_all_items\r\n        self.Controls.Add(self.buttonDeselectAll)\r\n\r\n        #Create a separator\r\n        self.separator1 = Panel()\r\n        self.separator1.Height = 2 \r\n        self.separator1.Width = 450\r\n        self.separator1.BackColor = System.Drawing.Color.Black\r\n        self.separator1.Location = Point(10,530)\r\n        self.Controls.Add(self.separator1)\r\n\r\n        # Label for ListBox\r\n        self.labelListBox2 = Label()\r\n        self.labelListBox2.Text = \"2. Excel File\"\r\n        self.labelListBox2.Location = Point(20,550)\r\n        self.labelListBox2.Size = Size(200,30)\r\n        self.labelListBox2.Font = Font(\"Arial\", 12, FontStyle.Bold)\r\n        self.Controls.Add(self.labelListBox2)\r\n        \r\n        # TextBox\r\n        self.textBox = TextBox()\r\n        self.textBox.Text = \"\"\r\n        self.textBox.Location = Point(150, 600)\r\n        self.textBox.Size = Size(320, 50)\r\n        self.Controls.Add(self.textBox)\r\n\r\n        # Button to open File Dialog\r\n        self.buttonFile = Button()\r\n        self.buttonFile.Text = \"Select File\"\r\n        self.buttonFile.Location = Point(20, 600)\r\n        self.buttonFile.Size = Size(100, 30)\r\n        self.Controls.Add(self.buttonFile)\r\n        \r\n        # Register event for File Button\r\n        self.buttonFile.Click += self.on_select_file_click\r\n        \r\n\r\n        # Submit Button\r\n        self.submit_button = Button()\r\n        self.submit_button.Text = \"Submit\"\r\n        self.submit_button.Location = Point(170,650)\r\n        self.submit_button.Size = Size(150,40)\r\n        self.submit_button.Click += self.Submit_Button\r\n        self.Controls.Add(self.submit_button)\r\n\r\n\r\n        # Label with \r\n        self.label_footer = Label()\r\n        self.label_footer.Text = \"Developed by: Oscar Mendoza\"\r\n        self.label_footer.Location = Point(20, 710)\r\n        self.label_footer.Size = Size(300, 30)\r\n        self.label_footer.Font = Font(\"Arial\", 7)\r\n        self.label_footer.ForeColor = System.Drawing.Color.Blue\r\n        self.Controls.Add(self.label_footer)\r\n\r\n        # hyperlink\r\n        self.linkLabel1 = LinkLabel()\r\n        self.linkLabel1.Text = \"Yt: OMBIM \"\r\n        self.linkLabel1.Location = Point(320, 710)\r\n        self.linkLabel1.Size = Size(100, 30)\r\n        self.linkLabel1.LinkClicked += self.link1_clicked\r\n        self.Controls.Add(self.linkLabel1)\r\n\r\n        # Second hyperlink\r\n        self.linkLabel2 = LinkLabel()\r\n        self.linkLabel2.Text = \"Linkedin\"\r\n        self.linkLabel2.Location = Point(420, 710)\r\n        self.linkLabel2.Size = Size(100, 30)\r\n        self.linkLabel2.LinkClicked += self.link2_clicked\r\n        self.Controls.Add(self.linkLabel2)\r\n\r\n    # EVENTS \r\n        \r\n    def on_select_file_click(self, sender, e):\r\n        # Open File Dialog\r\n        file_dialog = OpenFileDialog()\r\n        file_dialog.Filter = \"All files (*.*)|*.*\"\r\n        \r\n        if file_dialog.ShowDialog() == DialogResult.OK:\r\n            file_path = file_dialog.FileName\r\n            self.textBox.Text = file_path  # Display the selected file path in the TextBox\r\n\r\n    def Submit_Button(self, sender,event):\r\n        global OUT  # Captura mensaje del evento \r\n        message1 = \"Print Submited\"\r\n        message2 = self.textBox.Text\r\n        message3 = [self.schedule_mapping[self.checkedListBox.Items[i]] for i in self.checkedListBox.CheckedIndices]\r\n\r\n        if self.textBox.Text == \"\":\r\n            OUT = \"CANCELAR\"\r\n        else:\r\n            OUT = [message1, message2, message3]\r\n        self.submitted = True \r\n        self.Close()\r\n\r\n    def filter_updated(self, sender, event):\r\n        self.update_listBox()\r\n\r\n    def update_listBox(self):\r\n        # Obtener la lista de schedules\r\n        schedule_list = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Schedules).\\\r\n            WhereElementIsNotElementType().ToElements()\r\n        \r\n        filter_text = self.textBoxFilter.Text.lower()\r\n        self.checkedListBox.Items.Clear()\r\n\r\n        # Crear un diccionario para mapear nombres a objetos\r\n        self.schedule_mapping = {schedule.Name: schedule for schedule in schedule_list}\r\n\r\n        # Mostrar los nombres filtrados en el CheckedListBox\r\n        for name, schedule in self.schedule_mapping.items():\r\n            if filter_text in name.lower():\r\n                self.checkedListBox.Items.Add(name)\r\n    # EVENT: Select all items\r\n    def select_all_items(self, sender, event):\r\n        for i in range(self.checkedListBox.Items.Count):\r\n            self.checkedListBox.SetItemChecked(i, True)\r\n\r\n    # EVENT: Deselect all items\r\n    def deselect_all_items(self, sender, event):\r\n        for i in range(self.checkedListBox.Items.Count):\r\n            self.checkedListBox.SetItemChecked(i, False)\r\n\r\n    # Event handler for first hyperlink\r\n    def link1_clicked(self, sender, e):\r\n        System.Diagnostics.Process.Start(\"https://www.youtube.com/@mendozaballenabim\")\r\n\r\n    # Event handler for second hyperlink\r\n    def link2_clicked(self, sender, e):\r\n        System.Diagnostics.Process.Start(\"https://www.linkedin.com/in/omendozab/\")\r\n        \r\n    def on_form_closing(self, sender, e):\r\n        \"\"\"Captura el cierre del formulario por el botón de la 'X'.\"\"\"\r\n        global OUT\r\n        if not self.submitted:  # Si no se presionó Submit, significa que cerraron con la \"X\"\r\n            OUT = \"CANCELAR\"\r\n\r\n#References\r\ndoc   = DocumentManager.Instance.CurrentDBDocument\r\nuiapp = DocumentManager.Instance.CurrentUIApplication\r\napp   = uiapp.Application\r\nuidoc = uiapp.ActiveUIDocument\r\nselection = uidoc.Selection\r\nrvt_year    = int(app.VersionNumber)\r\n__title__ = \"Walls\"\r\n\r\n\r\n\r\nresult = []\r\nschedules_names = []\r\nrun = IN[0]\r\n\r\nif run:    \r\n    # Show the form\r\n    form = OM_Form()\r\n    Application.Run(form)  # el codigo para hasta que le demos instrucciones\r\n    if OUT == \"CANCELAR\":\r\n        OUT = \"Operacion cancelada por usuario\"\r\n    else:\r\n        ubicacion = OUT[1]\r\n        schedules = OUT[2]\r\n        for i in range(len(schedules)):\r\n            schedule = UnwrapElement(schedules[i])\r\n            name = schedule.Name\r\n            schedules_names.append(name)\r\n            # Transaction \r\n            TransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\n            table = schedule.GetTableData().GetSectionData(SectionType.Body)\r\n            nRows = table.NumberOfRows\r\n            nColumns = table.NumberOfColumns\r\n\r\n            # Collect all of data from the schedule\r\n            dataListRow = []\r\n            for row in range(nRows):\r\n                dataListColumn = []\r\n                for column in range(nColumns): \r\n                    dataListColumn.append(TableView.GetCellText(schedule, SectionType.Body, row, column))\r\n                dataListRow.append(dataListColumn)\r\n\r\n            # Transaction\r\n            TransactionManager.Instance.TransactionTaskDone()\r\n            result.append(dataListRow)\r\n        OUT = result, schedules_names, ubicacion\r\nelse: \r\n    OUT = \"True para ejecutar\"\r\n",
-      "Engine": "IronPython2",
-      "EngineName": "IronPython2",
       "VariableInputPorts": true,
-      "Id": "481fb7002eda491da01c67cec289d99c",
+      "Id": "d0e529625b7e43ffb3ca59d2e05cad3f",
       "Inputs": [
         {
-          "Id": "f3085949a4cf45be81b0db2523f6f3d2",
+          "Id": "4201361004eb4409bf68d5877890b1d7",
           "Name": "IN[0]",
           "Description": "Input #0",
           "UsingDefaultValue": false,
@@ -30,9 +48,9 @@
       ],
       "Outputs": [
         {
-          "Id": "0baddc89a48143c487a78bd92f2ff511",
+          "Id": "7474226ac2f146ff865609fab1b94ed4",
           "Name": "OUT",
-          "Description": "Result of the python script",
+          "Description": "Resultado de la secuencia de comandos de Python",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -40,66 +58,16 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "CoreNodeModels.Input.BoolSelector, CoreNodeModels",
-      "NodeType": "BooleanInputNode",
-      "InputValue": true,
-      "Id": "6403143f5ead40b9a4e529ff4529ad38",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "b43c8fa1779f45eca27ac8332f6b41dd",
-          "Name": "",
-          "Description": "Boolean",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Selection between a true and false."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "A[0];",
-      "Id": "d75b8d607fd94d5bb86a2630ef34510e",
-      "Inputs": [
-        {
-          "Id": "bda4e412adf5437bb0bcf00cd327f7a5",
-          "Name": "A",
-          "Description": "A",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "8d82e4b08df44dbe83dc5ea037b40d02",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
+      "Description": "Ejecuta una secuencia de comandos de IronPython incrustada"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
       "Code": "A[1];",
-      "Id": "7aad522b94ad4056808cc3f514d6fa5d",
+      "Id": "648d2740b60d44d7b9689551736d2d34",
       "Inputs": [
         {
-          "Id": "66824d372d924270b81abf13ecaa5b02",
+          "Id": "12cf70b8f8894a90a9b06fa59cf1f315",
           "Name": "A",
           "Description": "A",
           "UsingDefaultValue": false,
@@ -110,9 +78,9 @@
       ],
       "Outputs": [
         {
-          "Id": "7a7957a1ee2f46418a2a955c5eda7802",
+          "Id": "b1a82664da324023b6d3f221b3792c2e",
           "Name": "",
-          "Description": "Value of expression at line 1",
+          "Description": "Valor de la expresión en la línea 1",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -120,102 +88,63 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "A[2];",
-      "Id": "3e28ee55037549d4819b5ec5682b69b2",
-      "Inputs": [
-        {
-          "Id": "0c26623904d348b8ae89f5dee61d7c6f",
-          "Name": "A",
-          "Description": "A",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "3fa23607803246aa90ce315a4253da35",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
+      "Description": "Permite creación directa de código de DesignScript"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
       "NodeType": "FunctionNode",
-      "FunctionSignature": "DSOffice.Data.ExportToExcel@string,string,int,int,var[][],bool,bool",
-      "Id": "f3361ad1b95b4b319101bc213d88059c",
+      "FunctionSignature": "DSOffice.Data.ExportExcel@string,string,int,int,var[][],bool",
+      "Id": "5225a31a13184223bb484df4f3a912d8",
       "Inputs": [
         {
-          "Id": "29b1b9122b454a909d03acdb6dcf490e",
+          "Id": "ebe5d0d08d8644269b910c10183b0577",
           "Name": "filePath",
-          "Description": "File representing the Excel workbook\n\nstring",
+          "Description": "Ruta de archivo de la hoja de cálculo de Microsoft Excel.\n\nstring",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
         },
         {
-          "Id": "f37fc80f57cc4d698308eb69a280106b",
+          "Id": "34d0564e06164a6e9e90466ba7a25811",
           "Name": "sheetName",
-          "Description": "Name of the worksheet containing data\n\nstring",
+          "Description": "Nombre de la hoja de cálculo en la que escribir los datos.\n\nstring",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
         },
         {
-          "Id": "a1f93d75a0d44657b0fe342e267875f7",
+          "Id": "afbbb9529dc44cb1ba1eebd00b215c26",
           "Name": "startRow",
-          "Description": "Start row for writing data. Enter 0 for Row 1, 1 for Row 2, etc.\n\nint",
+          "Description": "Fila inicial para la escritura de datos. 0 equivale a la fila 1, 1 a la fila 2, etc.\n\nint",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
         },
         {
-          "Id": "f2fb8bf5189a4780a893a17f40529e1e",
-          "Name": "startColumn",
-          "Description": "Start column for writing data. Enter 0 for Column A, 1 for Column B, etc.\n\nint",
+          "Id": "c94f118ab7be45b0bd47b51b86e5b209",
+          "Name": "startCol",
+          "Description": "Columna inicial para la escritura de datos. 0 equivale a la columna A, 1 a la columna B, etc.\n\nint",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
         },
         {
-          "Id": "030f78fd4c514c2f81d47e673db3d9d1",
+          "Id": "4eabcb9cbf974a4e97889220cc70b675",
           "Name": "data",
-          "Description": "Data to write to the spreadsheet\n\nvar[][]",
+          "Description": "Datos que se deben escribir en la hoja de cálculo.\n\nvar[][]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
         },
         {
-          "Id": "f9a31c708227406a804b7e0a40520f4a",
+          "Id": "a25e4a65b76d495c8ca1581aec1075f1",
           "Name": "overWrite",
-          "Description": "Toggle to clear spreadsheet before writing\n\nbool\nDefault value : false",
-          "UsingDefaultValue": true,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "c5a77721ceb4485ba242ecc90825a373",
-          "Name": "writeAsString",
-          "Description": "Toggle to switch between writing Excel file as strings\n\nbool\nDefault value : false",
+          "Description": "bool\nValor por defecto : false",
           "UsingDefaultValue": true,
           "Level": 2,
           "UseLevels": false,
@@ -224,9 +153,9 @@
       ],
       "Outputs": [
         {
-          "Id": "0d8b8d7ae1f74fe295937a0f6798edb6",
+          "Id": "9ddba424841f456db4f1ee1112f2cc63",
           "Name": "data",
-          "Description": "Rows of data from the Excel worksheet",
+          "Description": "Datos escritos en la hoja de cálculo.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -234,19 +163,29 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "Write data to a Microsoft Excel spreadsheet. Data is written by row with sublists to be written in successive rows. Rows and columns are zero-indexed; for example, the value in the data list at [0,0] will be written to cell A1. Null values and empty lists are written to Excel as empty cells. This node requires Microsoft Excel to be installed.\n\nData.ExportToExcel (filePath: string, sheetName: string, startRow: int, startColumn: int, data: var[][], overWrite: bool = false, writeAsString: bool = false): var[][]"
+      "Description": "Escribe datos en una hoja de cálculo de Microsoft Excel. Los datos se escriben por fila con sublistas que se deben escribir en las filas sucesivas. Las filas y columnas se indexan a partir de cero; por ejemplo, el valor en la lista de datos en [0,0] se escribirá en la celda A1. Los valores nulos y las listas vacías se escriben como celdas vacías de Excel. Este nodo requiere Microsoft Excel para su instalación.\n\nData.ExportExcel (filePath: string, sheetName: string, startRow: int, startCol: int, data: var[][], overWrite: bool = false): var[][]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "0;",
-      "Id": "d1dea004a8364ed3aa7d142437b47b4e",
-      "Inputs": [],
+      "Code": "A[2];",
+      "Id": "7d918dfe4c31463b8a2ed5dda3501343",
+      "Inputs": [
+        {
+          "Id": "b99d545efd1f45768379e89994499cac",
+          "Name": "A",
+          "Description": "A",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
       "Outputs": [
         {
-          "Id": "e971fa64d3aa4a1c81da2f569b5767d9",
+          "Id": "04f8bc77dead4dcaaa3ef09fcf02865f",
           "Name": "",
-          "Description": "Value of expression at line 1",
+          "Description": "Valor de la expresión en la línea 1",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -254,110 +193,120 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
+      "Description": "Permite creación directa de código de DesignScript"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "0;",
+      "Id": "97fc9847d82348ccbd5fd8a6911a08aa",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "c7f5d9b7e5b44b5ea3c8ad09d75aaae0",
+          "Name": "",
+          "Description": "Valor de la expresión en la línea 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Permite creación directa de código de DesignScript"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "A[0];",
+      "Id": "2d341686ecce4dfab57f752100dd5204",
+      "Inputs": [
+        {
+          "Id": "b5f001af50234c05ad74fa4e26aa82dc",
+          "Name": "A",
+          "Description": "A",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "db6a6b2b7e40487583164a35f55929ff",
+          "Name": "",
+          "Description": "Valor de la expresión en la línea 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Permite creación directa de código de DesignScript"
     }
   ],
   "Connectors": [
     {
-      "Start": "0baddc89a48143c487a78bd92f2ff511",
-      "End": "bda4e412adf5437bb0bcf00cd327f7a5",
-      "Id": "fc3676fe9d2947dab85a50f76dec4484",
-      "IsHidden": "False"
+      "Start": "8cb6191e643042aeb55f7f564aab61d4",
+      "End": "4201361004eb4409bf68d5877890b1d7",
+      "Id": "975e606acc77412ca381c34912458c8b"
     },
     {
-      "Start": "0baddc89a48143c487a78bd92f2ff511",
-      "End": "66824d372d924270b81abf13ecaa5b02",
-      "Id": "c3148adfa1cd47a29b9c012badea6d22",
-      "IsHidden": "False"
+      "Start": "7474226ac2f146ff865609fab1b94ed4",
+      "End": "b5f001af50234c05ad74fa4e26aa82dc",
+      "Id": "988ee28c823a47fc92f62370841fdda2"
     },
     {
-      "Start": "0baddc89a48143c487a78bd92f2ff511",
-      "End": "0c26623904d348b8ae89f5dee61d7c6f",
-      "Id": "70693455dbe3493c973e9e4540001dbb",
-      "IsHidden": "False"
+      "Start": "7474226ac2f146ff865609fab1b94ed4",
+      "End": "b99d545efd1f45768379e89994499cac",
+      "Id": "adb79afe7bd0493b90eca1962984c812"
     },
     {
-      "Start": "b43c8fa1779f45eca27ac8332f6b41dd",
-      "End": "f3085949a4cf45be81b0db2523f6f3d2",
-      "Id": "afef9762c31645f78e12d4ae6746dcbc",
-      "IsHidden": "False"
+      "Start": "7474226ac2f146ff865609fab1b94ed4",
+      "End": "12cf70b8f8894a90a9b06fa59cf1f315",
+      "Id": "e9fee9503452470380e86e2eba2c4ab2"
     },
     {
-      "Start": "8d82e4b08df44dbe83dc5ea037b40d02",
-      "End": "030f78fd4c514c2f81d47e673db3d9d1",
-      "Id": "22b2adbaa8ee469aa1f93ec35b3198e5",
-      "IsHidden": "False"
+      "Start": "b1a82664da324023b6d3f221b3792c2e",
+      "End": "34d0564e06164a6e9e90466ba7a25811",
+      "Id": "0d574726405d4319b94d982d32a5bb5b"
     },
     {
-      "Start": "7a7957a1ee2f46418a2a955c5eda7802",
-      "End": "f37fc80f57cc4d698308eb69a280106b",
-      "Id": "728e22b23b294fcaaa39e8d16680ee4e",
-      "IsHidden": "False"
+      "Start": "04f8bc77dead4dcaaa3ef09fcf02865f",
+      "End": "ebe5d0d08d8644269b910c10183b0577",
+      "Id": "d01beab033134da0bc3fce7f452c2c06"
     },
     {
-      "Start": "3fa23607803246aa90ce315a4253da35",
-      "End": "29b1b9122b454a909d03acdb6dcf490e",
-      "Id": "404af73c59fe405b8f1c0ca3709c661b",
-      "IsHidden": "False"
+      "Start": "c7f5d9b7e5b44b5ea3c8ad09d75aaae0",
+      "End": "afbbb9529dc44cb1ba1eebd00b215c26",
+      "Id": "b04a908e47ab42458808e9e46826c733"
     },
     {
-      "Start": "e971fa64d3aa4a1c81da2f569b5767d9",
-      "End": "f2fb8bf5189a4780a893a17f40529e1e",
-      "Id": "e547c8e3df7c483785e8dd61773f158d",
-      "IsHidden": "False"
+      "Start": "c7f5d9b7e5b44b5ea3c8ad09d75aaae0",
+      "End": "c94f118ab7be45b0bd47b51b86e5b209",
+      "Id": "a343063dbb8343bc8a8225a421768054"
     },
     {
-      "Start": "e971fa64d3aa4a1c81da2f569b5767d9",
-      "End": "a1f93d75a0d44657b0fe342e267875f7",
-      "Id": "39413a0916174ac79d3b8b6c30c61e62",
-      "IsHidden": "False"
+      "Start": "db6a6b2b7e40487583164a35f55929ff",
+      "End": "4eabcb9cbf974a4e97889220cc70b675",
+      "Id": "dc4c84fb2dca4aebb769cf5fd137e15a"
     }
   ],
   "Dependencies": [],
-  "NodeLibraryDependencies": [
-    {
-      "Name": "SANITARIAS.xlsx",
-      "ReferenceType": "External",
-      "Nodes": [
-        "3e28ee55037549d4819b5ec5682b69b2"
-      ]
-    }
-  ],
-  "Thumbnail": "",
-  "GraphDocumentationURL": null,
-  "ExtensionWorkspaceData": [
-    {
-      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
-      "Name": "Properties",
-      "Version": "2.19",
-      "Data": {}
-    },
-    {
-      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
-      "Name": "Generative Design",
-      "Version": "6.1",
-      "Data": {}
-    }
-  ],
-  "Author": "",
-  "Linting": {
-    "activeLinter": "None",
-    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
-    "warningCount": 0,
-    "errorCount": 0
-  },
+  "NodeLibraryDependencies": [],
   "Bindings": [],
   "View": {
     "Dynamo": {
       "ScaleFactor": 1.0,
       "HasRunWithoutCrash": true,
       "IsVisibleInDynamoLibrary": true,
-      "Version": "2.16.2.5624",
-      "RunType": "Automatic",
+      "Version": "2.5.0.7460",
+      "RunType": "Manual",
       "RunPeriod": "1000"
     },
     "Camera": {
-      "Name": "Background Preview",
+      "Name": "Vista preliminar en segundo plano",
       "EyeX": -17.0,
       "EyeY": 24.0,
       "EyeZ": 50.0,
@@ -368,82 +317,81 @@
       "UpY": 1.0,
       "UpZ": 0.0
     },
-    "ConnectorPins": [],
     "NodeViews": [
       {
-        "Name": "INTERFAZ",
         "ShowGeometry": true,
-        "Id": "481fb7002eda491da01c67cec289d99c",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -48.630557841273742,
-        "Y": 314.60106777026988
-      },
-      {
         "Name": "Boolean",
-        "ShowGeometry": true,
-        "Id": "6403143f5ead40b9a4e529ff4529ad38",
+        "Id": "5dafa42a06f5481db4736e5cdde75b56",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -301.7358203153272,
-        "Y": 265.10474920477282
+        "X": 439.35455684603227,
+        "Y": 376.33539743278311
       },
       {
-        "Name": "DATA",
         "ShowGeometry": true,
-        "Id": "d75b8d607fd94d5bb86a2630ef34510e",
+        "Name": "Python Script",
+        "Id": "d0e529625b7e43ffb3ca59d2e05cad3f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 236.11856146792684,
-        "Y": 185.5062422018128
+        "X": 598.08649392296365,
+        "Y": 518.60745383910557
       },
       {
-        "Name": "NOMBRES",
         "ShowGeometry": true,
-        "Id": "7aad522b94ad4056808cc3f514d6fa5d",
+        "Name": "Nombres",
+        "Id": "648d2740b60d44d7b9689551736d2d34",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 247.66194765502576,
-        "Y": 319.97789724772753
+        "X": 803.60410172069373,
+        "Y": 316.73050738005634
       },
       {
-        "Name": "FILE PATH",
         "ShowGeometry": true,
-        "Id": "3e28ee55037549d4819b5ec5682b69b2",
+        "Name": "Data.ExportExcel",
+        "Id": "5225a31a13184223bb484df4f3a912d8",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 274.94492934932987,
-        "Y": 467.30991950176656
+        "X": 1106.6762720668498,
+        "Y": 269.56740754872664
       },
       {
-        "Name": "Data.ExportToExcel",
         "ShowGeometry": true,
-        "Id": "f3361ad1b95b4b319101bc213d88059c",
+        "Name": "File Path",
+        "Id": "7d918dfe4c31463b8a2ed5dda3501343",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 600.24379061150228,
-        "Y": 127.44962108845291
+        "X": 803.00654180926972,
+        "Y": 222.87032885100604
       },
       {
-        "Name": "FILAS /COLUMNAS INICIALES",
         "ShowGeometry": true,
-        "Id": "d1dea004a8364ed3aa7d142437b47b4e",
+        "Name": "Columnas y filas",
+        "Id": "97fc9847d82348ccbd5fd8a6911a08aa",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 194.09854767531431,
-        "Y": 0.37443320968128546
+        "X": 782.76086564802176,
+        "Y": 412.18738239602089
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Data",
+        "Id": "2d341686ecce4dfab57f752100dd5204",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 805.15467334967207,
+        "Y": 515.20642530562964
       }
     ],
     "Annotations": [],
-    "X": 322.13988156433095,
-    "Y": 161.87908535884804,
-    "Zoom": 0.895416984832867
+    "X": -235.30894154322823,
+    "Y": -10.242045589761119,
+    "Zoom": 1.1643898080562645
   }
 }
